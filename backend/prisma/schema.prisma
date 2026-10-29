@@ -1,0 +1,176 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  CITIZEN
+  UNIVERSITY
+  INDUSTRY
+  GOVERNMENT
+}
+
+enum Category {
+  INFRASTRUCTURE
+  ENVIRONMENT
+  EDUCATION
+  HEALTHCARE
+  SANITATION
+  PUBLIC_SAFETY
+  OTHER
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ProblemStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SolutionType {
+  PROPOSAL
+  RECOMMENDATION
+}
+
+enum ReviewStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  ACCEPTED
+  REJECTED
+}
+
+model User {
+  id              String           @id @default(uuid())
+  fullName        String
+  email           String
+  emailNormalized String           @unique
+  passwordHash    String
+  role            Role
+  organization    String?
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  sessions        Session[]
+  problems        Problem[]
+  solutions       Solution[]
+  supports        SolutionSupport[]
+  updates         ProgressUpdate[]
+  aiAnalyses      AiAnalysis[]
+
+  @@index([emailNormalized])
+  @@index([role])
+}
+
+model Session {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String    @unique
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+  expiresAt  DateTime
+  revokedAt  DateTime?
+
+  @@index([userId])
+  @@index([tokenHash])
+}
+
+model Problem {
+  id          String           @id @default(uuid())
+  title       String
+  description String
+  category    Category
+  location    String
+  priority    Priority
+  status      ProblemStatus    @default(SUBMITTED)
+  creatorId   String
+  creator     User             @relation(fields: [creatorId], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  solutions   Solution[]
+  updates     ProgressUpdate[]
+  aiAnalyses  AiAnalysis[]
+
+  @@index([creatorId])
+  @@index([category])
+  @@index([status])
+  @@index([priority])
+}
+
+model Solution {
+  id                     String            @id @default(uuid())
+  problemId              String
+  problem                Problem           @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  authorId               String
+  author                 User              @relation(fields: [authorId], references: [id])
+  authorRole             Role
+  type                   SolutionType
+  title                  String
+  explanation            String
+  expectedBenefits       String
+  implementationApproach String
+  reviewStatus           ReviewStatus      @default(SUBMITTED)
+  createdAt              DateTime          @default(now())
+  updatedAt              DateTime          @updatedAt
+
+  supports               SolutionSupport[]
+
+  @@index([problemId])
+  @@index([authorId])
+  @@index([reviewStatus])
+}
+
+model SolutionSupport {
+  id         String   @id @default(uuid())
+  solutionId String
+  solution   Solution @relation(fields: [solutionId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([solutionId, userId])
+  @@index([solutionId])
+  @@index([userId])
+}
+
+model ProgressUpdate {
+  id         String        @id @default(uuid())
+  problemId  String
+  problem    Problem       @relation(fields: [problemId], references: [id])
+  authorId   String
+  author     User          @relation(fields: [authorId], references: [id])
+  fromStatus ProblemStatus
+  toStatus   ProblemStatus
+  message    String
+  createdAt  DateTime      @default(now())
+
+  @@index([problemId])
+  @@index([authorId])
+}
+
+model AiAnalysis {
+  id            String   @id @default(uuid())
+  problemId     String
+  problem       Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  requestedById String
+  requestedBy   User     @relation(fields: [requestedById], references: [id])
+  content       String   @db.Text
+  model         String
+  createdAt     DateTime @default(now())
+
+  @@index([problemId])
+}
