@@ -69,3 +69,6 @@ Thumbs.db
 .idea/
 .vscode/*
 !.vscode/extensions.json
+
+# Helper scripts
+push.bat
