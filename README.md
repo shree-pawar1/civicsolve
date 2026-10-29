@@ -238,4 +238,5 @@ npm test
 2. **AI Provider API Key**: The AI-assisted problem synthesis endpoint is fully wired to Google Gemini 1.5. If `GEMINI_API_KEY` is not present in the backend `.env`, it returns an honest status message (*"AI analysis is unavailable until a provider is configured."*) rather than fabricating fake analysis output.
 3. **Email Verification**: Email verification links are omitted in accordance with the project rule: no claiming email verification occurred without a configured SMTP/SES provider.
 #   c i v i c s o l v e  
+ #   c i v i c s o l v e  
  
